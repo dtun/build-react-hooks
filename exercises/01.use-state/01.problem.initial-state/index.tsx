@@ -1,13 +1,11 @@
-// 💣 delete this
-import { useState } from 'react'
-
 import { createRoot } from 'react-dom/client'
 
-// 🐨 create a `useState` function which accepts the initial state and returns
-// an array of the state and a no-op function: () => {}
-// 🦺 note you may need to ignore some typescript errors here. We'll fix them later.
-// Feel free to make the `useState` a generic though!
-// ⚠️ don't forget to `export` your `useState` function so the tests can find it
+export function useState<State>(initialState: State) {
+	const state = initialState
+	const setState = () => {}
+
+	return [state, setState] as const
+}
 
 function Counter() {
 	const [count, setCount] = useState(0)
