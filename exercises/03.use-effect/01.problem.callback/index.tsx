@@ -1,8 +1,4 @@
-// 💣 delete this so we can implement our own
-import { useEffect } from 'react'
-
-// 💰 you'll need this
-// import { flushSync } from 'react-dom'
+import { flushSync } from 'react-dom'
 import { createRoot } from 'react-dom/client'
 
 const INITIALIZATION = Symbol('phase.initialization')
@@ -12,8 +8,7 @@ let phase: Phase
 let hookIndex = 0
 const states: Array<[any, (newState: any) => void]> = []
 type EffectCallback = () => void
-// 🐨 make a variable called "effects" that's an array of objects with a callback property
-// of the "EffectCallback" type we've defined above
+const effects: { callback: EffectCallback }[] = []
 
 export function useState<State>(initialState: State) {
 	const id = hookIndex++
@@ -29,9 +24,10 @@ export function useState<State>(initialState: State) {
 	return states[id] as [State, (newState: State) => void]
 }
 
-// 🐨 create a useEffect function here that accepts an "EffectCallback" callback,
-// and adds the callback to the effects array at the index "hookIndex++"
-// 🚨 make sure to export this function so I can test it
+export function useEffect(effect: EffectCallback) {
+	const id = hookIndex++
+	effects[id] = { callback: effect }
+}
 
 function Counter() {
 	const [count, setCount] = useState(0)
@@ -62,14 +58,14 @@ function render(newPhase: Phase) {
 	hookIndex = 0
 	phase = newPhase
 
-	// 🦉 Because we have no way of knowing when React will finish rendering so we
-	// can call our effects, we need to cheat a little bit by telling React to
-	// render synchronously instead...
-	// 🐨 wrap this in flushSync
-	appRoot.render(<Counter />)
+	flushSync(() => {
+		appRoot.render(<Counter />)
+	})
 
-	// 🐨 add a for of loop for all the effects and call their callbacks,
-	// making sure to skip over any undefined effects
+	for (const effect of effects) {
+		if (!effect) continue
+		effect.callback()
+	}
 }
 
 render(INITIALIZATION)
