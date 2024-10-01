@@ -10,7 +10,8 @@ const states: Array<[any, (newState: any) => void]> = []
 type EffectCallback = () => void
 const effects: Array<{
 	callback: EffectCallback
-	// 🦺 add an optional deps and prevDeps properties which can be arrays of anything
+	deps?: Array<any>
+	prevDeps?: Array<any>
 }> = []
 
 export function useState<State>(initialState: State) {
@@ -28,10 +29,9 @@ export function useState<State>(initialState: State) {
 }
 
 // 🐨 add an optional deps argument here
-export function useEffect(callback: EffectCallback) {
+export function useEffect(callback: EffectCallback, deps?: Array<any>) {
 	const id = hookIndex++
-	// 🐨 add deps and prevDeps to this object - prevDeps should be "effects[id]?.deps"
-	effects[id] = { callback }
+	effects[id] = { callback, deps, prevDeps: effects[id]?.deps }
 }
 
 function Counter() {
@@ -47,7 +47,6 @@ function Counter() {
 		} else {
 			console.info('consider yourself ineffective!')
 		}
-		// @ts-expect-error 💣 delete this comment
 	}, [enabled])
 
 	return (
@@ -74,13 +73,11 @@ function render(newPhase: Phase) {
 	for (const effect of effects) {
 		if (!effect) continue
 
-		// 🐨 Create a "hasDepsChanged" variable to determine whether the effect should be called.
-		// If the effect has no deps, "hasDepsChanged" should be true.
-		// If the effect does have deps, "hasDepsChanged" should calculate whether any item
-		// in the "deps" array is different from the corresponding item in the "prevDeps" array,
-		// and return true if so, false otherwise.
+		const hasDepsChanged = effect.deps
+			? !effect.deps.every((dep, i) => Object.is(dep, effect.prevDeps?.[i]))
+			: true
 
-		effect.callback()
+		if (!effect.deps || hasDepsChanged) effect.callback()
 	}
 }
 
